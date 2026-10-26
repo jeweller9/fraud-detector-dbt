@@ -13,3 +13,4 @@ models:
     marts:
       +materialized: table
       +engine: MergeTree()
+
