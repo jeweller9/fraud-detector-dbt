@@ -1,0 +1,15 @@
+name: 'fraud_analytics'
+version: '1.0.0'
+config-version: 2
+profile: 'clickhouse-fraud'
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+
+models:
+  fraud_analytics:
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table
+      +engine: MergeTree()

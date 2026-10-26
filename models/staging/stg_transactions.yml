@@ -1,0 +1,35 @@
+version: 2
+
+models:
+  - name: stg_transactions
+    description: "Очищенные и нормализованные транзакции. Одна строка — одна транзакция."
+    columns:
+      - name: transaction_time
+        tests: [not_null]
+      - name: amount
+        tests: [not_null]
+      - name: amount_bucket
+        description: "Сегмент суммы, вычисленный макросом amount_bucket"
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['low', 'medium', 'high', 'very_high']
+
+unit_tests:
+  - name: test_amount_bucket_logic
+    description: "Проверяет, что макрос amount_bucket корректно размечает суммы"
+    model: stg_transactions
+    given:
+      - input: source('transactions_db', 'transactions')
+        rows:
+          - {transaction_time: "2025-01-01 10:00:00", merch: "shop_a", cat_id: "cat1", amount: 5, name_1: "Ivan", name_2: "Petrov", gender: "M", us_state: "CA", lat: 34.0, lon: -118.0, merchant_lat: 34.1, merchant_lon: -118.1, target: 0}
+          - {transaction_time: "2025-01-01 11:00:00", merch: "shop_b", cat_id: "cat2", amount: 50, name_1: "Anna", name_2: "Sidorova", gender: "F", us_state: "NY", lat: 40.7, lon: -74.0, merchant_lat: 40.8, merchant_lon: -74.1, target: 1}
+          - {transaction_time: "2025-01-01 12:00:00", merch: "shop_c", cat_id: "cat3", amount: 500, name_1: "Oleg", name_2: "Smirnov", gender: "M", us_state: "TX", lat: 29.7, lon: -95.3, merchant_lat: 29.8, merchant_lon: -95.4, target: 0}
+          - {transaction_time: "2025-01-01 13:00:00", merch: "shop_d", cat_id: "cat4", amount: 5000, name_1: "Elena", name_2: "Kuznetsova", gender: "F", us_state: "WA", lat: 47.6, lon: -122.3, merchant_lat: 47.7, merchant_lon: -122.4, target: 0}
+    expect:
+      rows:
+        - {amount: 5, amount_bucket: "low"}
+        - {amount: 50, amount_bucket: "medium"}
+        - {amount: 500, amount_bucket: "high"}
+        - {amount: 5000, amount_bucket: "very_high"}
